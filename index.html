@@ -41,7 +41,6 @@
   <div class="fixed bottom-2 left-0 z-[60] bg-black text-white text-[8px] leading-none px-2 py-1 font-mono">
     V-00.01.00
   </div>
-
   <!-- ==================== LAYER 1: THE sterile LIGHT STATE (LANDING PAGE) ==================== -->
   <div id="landing-screen" class="absolute inset-0 bg-stone-100 flex flex-col items-center justify-between p-2 z-30 transition-all duration-[800ms] text-stone-900 overflow-hidden">
     
@@ -105,6 +104,10 @@
 
     </div>
 
+    <!-- Feedback trigger (Visible only on Landing Screen) -->
+    <button id="feedback-trigger" class="absolute bottom-2 right-0 z-30 bg-black text-stone-400 hover:text-white text-[8px] leading-none px-2 py-1 font-mono underline uppercase tracking-wider transition-colors cursor-pointer">
+      File Grievance
+    </button>
   </div>
 
 
@@ -254,10 +257,35 @@
     });
   </script>
 
+
+  <!-- Feedback Modal -->
+  <div id="feedback-modal" class="hidden fixed inset-0 z-[100] bg-stone-900/80 flex items-center justify-center backdrop-blur-sm px-4">
+    <div class="bg-stone-100 border-4 border-stone-800 p-4 max-w-[400px] w-full shadow-2xl relative rounded">
+      <h2 class="font-elite text-lg font-bold text-stone-900 mb-2 uppercase border-b-2 border-stone-800 pb-1">Form 404: Citizen Grievance</h2>
+      <p class="font-sans text-[11px] text-stone-700 mb-3">All grievances are routed directly to the Ministry of Indifference.</p>
+      
+      <div class="mb-3">
+        <label for="feedback-email" class="block font-mono text-[10px] text-stone-600 uppercase mb-1 font-bold">Email Address (Optional)</label>
+        <input type="email" id="feedback-email" class="w-full bg-white border-2 border-stone-800 p-1.5 text-sm font-mono text-stone-800 focus:outline-none focus:border-red-700" placeholder="citizen@roachrepublic.com">
+      </div>
+      
+      <div class="mb-3">
+        <label for="feedback-text" class="block font-mono text-[10px] text-stone-600 uppercase mb-1 font-bold">Message (Compulsory)</label>
+        <textarea id="feedback-text" class="w-full bg-white border-2 border-stone-800 p-2 text-sm font-mono text-stone-800 h-24 focus:outline-none focus:border-red-700 resize-none" placeholder="rant about roachrepublic"></textarea>
+      </div>
+      
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="feedback-cancel" class="px-3 py-1 bg-stone-300 border-2 border-stone-800 font-mono text-xs uppercase hover:bg-stone-400 text-stone-800 font-bold">Close</button>
+        <button id="feedback-submit" class="px-3 py-1 bg-red-700 text-stone-100 border-2 border-red-900 font-mono text-xs uppercase hover:bg-red-600 font-bold">Send Message</button>
+      </div>
+    </div>
+  </div>
+  
   <!-- Game Modules -->
   <script src="audio.js"></script>
   <script src="popups.js"></script>
   <script src="game.js"></script>
   <script src="landing-script.js"></script>
+
 </body>
 </html>

@@ -131,12 +131,7 @@ registerListener(document.getElementById('resume-btn'), 'click', () => {
 
 // Exit handler returns to landing page
 const returnToLanding = () => {
-  removeAllListeners();
-
-  // Cleanup game engine listeners and joystick
   if (window.gameEngine) {
-    window.gameEngine.cleanup();
-    window.gameEngine.cleanupJoystick();
     window.gameEngine.state = 'LANDING';
   }
 
@@ -160,8 +155,6 @@ const returnToLanding = () => {
   }
   isLightOn = true;
   document.body.style.backgroundColor = '#1c1917';
-
-  reattachListeners();
 };
 
 registerListener(document.getElementById('exit-btn'), 'click', returnToLanding);
@@ -190,16 +183,6 @@ function initGameEngine() {
 
 registerListener(window, 'load', initGameEngine);
 
-// Re-attach listeners after returning to landing
-function reattachListeners() {
-  registerListener(simpleSwitch, 'click', startGameplayFromLanding);
-  document.querySelectorAll('input[name="control-mode"]').forEach((el) => {
-    registerListener(el, 'change', (e) => {
-      if (!window.gameEngine || !e.target.checked) return;
-      window.gameEngine.setControlMode(e.target.value);
-    });
-  });
-}
 
 // --- Bulb Physics (moved here to be part of landing script) ---
 const bulbSvg = document.querySelector('.lightbulb-cord');
@@ -395,3 +378,69 @@ function initBulbPhysics() {
 window.addEventListener('beforeunload', () => {
   if (bulbAnimationFrameId) cancelAnimationFrame(bulbAnimationFrameId);
 });
+
+// Feedback Modal
+function initFeedbackModal() {
+  const feedbackTrigger = document.getElementById('feedback-trigger');
+  const feedbackModal = document.getElementById('feedback-modal');
+  const feedbackCancel = document.getElementById('feedback-cancel');
+  const feedbackSubmit = document.getElementById('feedback-submit');
+  const feedbackText = document.getElementById('feedback-text');
+  const feedbackEmail = document.getElementById('feedback-email');
+  
+  if (!feedbackTrigger || !feedbackModal) return;
+
+  const openModal = () => {
+    feedbackModal.classList.remove('hidden');
+    if (feedbackText) { feedbackText.value = ''; feedbackText.focus(); }
+    if (feedbackEmail) feedbackEmail.value = '';
+  };
+
+  const closeModal = () => feedbackModal.classList.add('hidden');
+
+  feedbackTrigger.addEventListener('click', openModal);
+  if (feedbackCancel) feedbackCancel.addEventListener('click', closeModal);
+
+  if (feedbackSubmit) {
+    feedbackSubmit.addEventListener('click', async () => {
+      if (!feedbackText || feedbackText.value.trim() === '') return;
+
+      const originalText = feedbackSubmit.textContent;
+      feedbackSubmit.textContent = 'SENDING...';
+      feedbackSubmit.disabled = true;
+
+      const WEB3FORMS_ACCESS_KEY = "9b2db7a7-be85-412a-9e81-9c8efbc2b9c0";
+      const emailValue = feedbackEmail ? feedbackEmail.value.trim() : 'No Email Provided';
+      const messageValue = feedbackText.value.trim();
+
+      const reset = () => {
+        closeModal();
+        feedbackSubmit.textContent = originalText;
+        feedbackSubmit.disabled = false;
+      };
+
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: 'New Grievance from Roach Republic',
+            email: emailValue || 'No Email Provided',
+            message: messageValue
+          })
+        });
+        const result = await response.json();
+        reset();
+        alert(result.success
+          ? 'Grievance formally lodged with the Ministry. (Message Sent!)'
+          : 'The bureaucracy failed to process your form. Please try again.');
+      } catch (_) {
+        reset();
+        alert('A system error occurred. The Ministry apologizes for the inconvenience.');
+      }
+    });
+  }
+}
+
+initFeedbackModal();

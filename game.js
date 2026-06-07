@@ -104,34 +104,15 @@ class GameEngine {
     this._listeners.push({ target: window, event: 'resize', handler: resizeHandler });
     window.addEventListener('resize', resizeHandler);
 
-    const mouseMoveHandler = (e) => {
-      this.mouse.x = e.clientX;
-      this.mouse.y = e.clientY;
-    };
-    this._listeners.push({ target: window, event: 'mousemove', handler: mouseMoveHandler });
-    window.addEventListener('mousemove', mouseMoveHandler);
-
+    // Unified pointer/mouse/touch handler for follow-cursor mode
     const pointerMoveHandler = (e) => {
       this.mouse.x = e.clientX;
       this.mouse.y = e.clientY;
     };
     this._listeners.push({ target: window, event: 'pointermove', handler: pointerMoveHandler });
-    window.addEventListener('pointermove', pointerMoveHandler);
-
     this._listeners.push({ target: window, event: 'pointerdown', handler: pointerMoveHandler });
+    window.addEventListener('pointermove', pointerMoveHandler);
     window.addEventListener('pointerdown', pointerMoveHandler);
-
-    const touchMoveHandler = (e) => {
-      const t = e.touches && e.touches[0];
-      if (!t) return;
-      this.mouse.x = t.clientX;
-      this.mouse.y = t.clientY;
-    };
-    this._listeners.push({ target: window, event: 'touchmove', handler: touchMoveHandler, passive: true });
-    window.addEventListener('touchmove', touchMoveHandler, { passive: true });
-
-    this._listeners.push({ target: window, event: 'touchstart', handler: touchMoveHandler, passive: true });
-    window.addEventListener('touchstart', touchMoveHandler, { passive: true });
 
     this.setupJoystick();
     this.state = 'LANDING';
@@ -241,20 +222,13 @@ class GameEngine {
     this._joystickListeners.push({ target: window, event: 'touchend', handler: handleEnd });
     window.addEventListener('touchend', handleEnd);
 
-    this._joystickListeners.push({
-      target: joyContainer,
-      event: 'pointerdown',
-      handler: (e) => {
-        e.preventDefault();
-        handleStart(e);
-        try { joyContainer.setPointerCapture(e.pointerId); } catch (_) { }
-      }
-    });
-    joyContainer.addEventListener('pointerdown', (e) => {
+    const joyPointerDownHandler = (e) => {
       e.preventDefault();
       handleStart(e);
       try { joyContainer.setPointerCapture(e.pointerId); } catch (_) { }
-    });
+    };
+    this._joystickListeners.push({ target: joyContainer, event: 'pointerdown', handler: joyPointerDownHandler });
+    joyContainer.addEventListener('pointerdown', joyPointerDownHandler);
 
     this._joystickListeners.push({ target: window, event: 'pointermove', handler: handleMove });
     window.addEventListener('pointermove', handleMove);
@@ -289,11 +263,10 @@ class GameEngine {
 
     this.money = 1.0; // Start with 1 Rs
     this.peakMoney = 1.0;
-    this.taxTimer = 0; // Reset tax timer
+    this.taxTimer = 0;
     this.survivalTime = 0;
     this.chappalHits = 0;
     this.deadAlliesCount = 0;
-    this.taxTimer = 0;
     this.lastTaxAmount = 0;
 
     this.hazards = [];
@@ -325,10 +298,6 @@ class GameEngine {
     this.updateHUD();
   }
 
-  addScore(points) {
-    // Stub method for popup scoring (popups award +25/-10 points separately from money)
-    // Currently unused but kept for popup compatibility
-  }
 
 
 
@@ -1047,8 +1016,8 @@ class GameEngine {
   draw() {
     if (!this.ctx) return;
 
-    // Optional zoom for mobile to see more area
-    const zoom = this.isMobile ? 0.65 : 1.0;
+    // Optional zoom for mobile (screens < 768px wide) to see more area
+    const zoom = (typeof window !== 'undefined' && window.innerWidth < 768) ? 0.55 : 1.0;
     const vWidth = this.canvas.width / zoom;
     const vHeight = this.canvas.height / zoom;
 
