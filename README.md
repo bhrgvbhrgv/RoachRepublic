@@ -1,4 +1,4 @@
-# 🪳 Cockroach Janta Party (CJP) - Full Game Mechanics Reference
+# 🪳 Roach Republic (RR) - Full Game Mechanics Reference
 
 > **Document Scope:** Captures CURRENT implemented gameplay behavior in: `index.html`, `game.js`, `popups.js`, `audio.js`, `style.css`
 
@@ -18,8 +18,8 @@
 
 ### Hazard Systems
 - [5. Hazard Systems](#5-hazard-systems)
-  - [5.1 Bata Chappal](#51-bata-chappal)
-  - [5.2 Baygon Cloud](#52-baygon-cloud)
+  - [5.1 Chappal](#51-chappal)
+  - [5.2 Bygone Cloud](#52-bygone-cloud)
   - [5.3 Torch Sweep](#53-torch-sweep)
 
 ### Progression & Collectibles
@@ -151,12 +151,12 @@ Base Scoring:
 
 | Counter | Meaning |
 |---------|---------|
-| **CJP LEATHER TOLERANCE** | Current hearts remaining |
+| **RR LEATHER TOLERANCE** | Current hearts remaining |
 | **MULTIPLIER** | Active score multiplier (1.0x - 5.0x+) |
 | **TOTAL SCORE** | Current session score |
 | **LEATHER IMPACTS** | Cumulative chappal contact count |
-| **CABINET COCKROACHES** | Allied roaches currently following player |
-| **BEST CORRUPTION SCORE** | High score (persisted in localStorage) |
+| **CABINET ROACHES** | Allied roaches currently following player |
+| **BEST SCORE** | High score (persisted in localStorage) |
 
 ### Power-Up Bars
 
@@ -180,7 +180,7 @@ Base Scoring:
 
 All hazards live in `hazards[]` and update every frame.
 
-### 5.1 Bata Chappal
+### 5.1 Chappal
 
 **Type:** `chappal`
 
@@ -223,9 +223,9 @@ On Impact:
 
 ---
 
-### 5.2 Baygon Cloud
+### 5.2 Bygone Cloud
 
-**Type:** `baygon`
+**Type:** `bygone`
 
 #### Spawn Pattern
 
@@ -248,7 +248,7 @@ Spawn Position:
 ```
 While Player Inside:
   ├─ Damage tick every 0.8s
-  ├─ Call triggerDamage('baygon')
+  ├─ Call triggerDamage('bygone')
   └─ No ally protection (direct player damage)
 ```
 
@@ -481,7 +481,7 @@ triggerDamage(source):
 1. **Shield** → supersedes all
 2. **Invulnerability** → supersedes all
 3. **Ally Protection** → chappal only
-4. **Direct Damage** → Baygon damages player hearts (if no shield/i-frame)
+4. **Direct Damage** → Bygone damages player hearts (if no shield/i-frame)
 
 ---
 
@@ -596,7 +596,7 @@ Landing Page Layout:
 
 ```
 Saved to localStorage:
-  └─ High score ('cjp_high_score')
+  └─ High score ('rr_high_score')
 ```
 
 ### Run-Reset Values
@@ -612,7 +612,7 @@ Game State:
 
 Entities:
   ├─ Allied roaches & dead ally animations
-  ├─ Hazards (chappals/baygon/torch)
+  ├─ Hazards (chappals/bygone/torch)
   └─ Collectibles
 ```
 
@@ -623,13 +623,13 @@ Entities:
 ### Hazard Balance
 
 ```
-Bata Chappals:
+Chappals:
   ├─ Frequent spawning (increasing)
   ├─ Doubled per cycle (pressure increase)
   ├─ Each 30% slower than baseline speed
   └─ 20% front-origin, 80% random
 
-Baygon Cloud:
+Bygone Cloud:
   ├─ Very large radius (270)
   ├─ Medium duration (6s)
   └─ Tick damage while inside
@@ -673,10 +673,10 @@ Chappal Settings:
   └─ Radius: 40
 ```
 
-### Baygon Constants
+### Bygone Constants
 
 ```
-Baygon Settings:
+Bygone Settings:
   ├─ Radius: 270
   ├─ Life: 6s
   └─ Damage tick: every 0.8s (while inside)
