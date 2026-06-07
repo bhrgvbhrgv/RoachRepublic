@@ -67,7 +67,10 @@ class GameEngine {
     this.chappalHits = 0;
     this.deadAlliesCount = 0;
     this.highScore = parseFloat(localStorage.getItem('rr_high_score') || '0'); // peak money ever
-    this.controlMode = 'follow'; // follow | joystick
+    
+    // Auto-detect mobile devices natively in constructor
+    const isTouch = (typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
+    this.controlMode = isTouch ? 'joystick' : 'follow'; // follow | joystick
 
     // Tax system
     this.taxTimer = 0;
@@ -115,6 +118,9 @@ class GameEngine {
     this._listeners.push({ target: window, event: 'pointermove', handler: pointerMoveHandler });
     window.addEventListener('pointermove', pointerMoveHandler);
 
+    this._listeners.push({ target: window, event: 'pointerdown', handler: pointerMoveHandler });
+    window.addEventListener('pointerdown', pointerMoveHandler);
+
     const touchMoveHandler = (e) => {
       const t = e.touches && e.touches[0];
       if (!t) return;
@@ -123,6 +129,9 @@ class GameEngine {
     };
     this._listeners.push({ target: window, event: 'touchmove', handler: touchMoveHandler, passive: true });
     window.addEventListener('touchmove', touchMoveHandler, { passive: true });
+
+    this._listeners.push({ target: window, event: 'touchstart', handler: touchMoveHandler, passive: true });
+    window.addEventListener('touchstart', touchMoveHandler, { passive: true });
 
     this.setupJoystick();
     this.state = 'LANDING';
@@ -393,11 +402,11 @@ class GameEngine {
 
   showTaxPopup(amount) {
     const popup = document.createElement('div');
-    popup.className = 'fixed bottom-4 left-4 bg-red-900/95 border-4 border-red-600 text-red-100 px-6 py-4 rounded shadow-2xl z-50 font-mono text-center pointer-events-none';
+    popup.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-red-900/95 border-2 md:border-4 border-red-600 text-red-100 px-3 py-2 md:px-6 md:py-4 rounded shadow-2xl z-50 font-mono text-center pointer-events-none';
     popup.style.animation = 'pulse 0.5s ease-in-out';
     popup.innerHTML = `
-      <div class="text-sm font-bold uppercase tracking-wider mb-2">30% TAX DEDUCTED</div>
-      <div class="text-2xl font-bold text-red-300">-${amount.toFixed(2)} Rs</div>
+      <div class="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-1">30% TAX DEDUCTED</div>
+      <div class="text-sm md:text-2xl font-bold text-red-300">-${amount.toFixed(2)} Rs</div>
     `;
     document.body.appendChild(popup);
 
