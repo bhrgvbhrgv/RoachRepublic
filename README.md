@@ -1,6 +1,6 @@
 # 🪳 Roach Republic (RR) - Full Game Mechanics Reference
 
-> **Document Scope:** Captures CURRENT implemented gameplay behavior in: `index.html`, `game.js`, `popups.js`, `audio.js`, `style.css`
+> **Document Scope:** Captures CURRENT implemented gameplay behavior in: `index.html`, `game.js`, `landing-script.js`, `audio.js`, `style.css`
 
 ---
 
@@ -24,10 +24,11 @@
 
 ### Progression & Collectibles
 - [6. Power-Ups & Collectibles](#6-power-ups--collectibles)
-  - [6.1 Crumb](#61-crumb)
-  - [6.2 Shield (Grease Shield)](#62-shield-grease-shield)
-  - [6.3 Speed (Speed Tantrum)](#63-speed-speed-tantrum)
-  - [6.4 Ally Pickup](#64-ally-pickup)
+  - [6.1 Coins](#61-coins)
+  - [6.2 Crumb](#62-crumb)
+  - [6.3 Shield (Grease Shield)](#63-shield-grease-shield)
+  - [6.4 Speed (Speed Tantrum)](#64-speed-speed-tantrum)
+  - [6.5 Ally Pickup](#65-ally-pickup)
 - [7. Ally Roach System](#7-ally-roach-system)
 
 ### Game Logic
@@ -128,19 +129,17 @@ Damage Event:
 └─ During shield/i-frame: further hits ignored
 ```
 
-### Score & Multiplier System
+### Money & Taxation System
 
 ```
-Base Scoring:
-├─ +1 score per second (baseline)
-├─ Gains multiplied by active multiplier
-├─ Multiplier starts at: 1.0x
+Money System:
+├─ Primary score metric is Rupees (₹)
+├─ Collecting coins adds ₹1.00 per coin
+├─ No bankruptcy limit (balance can go into the negatives)
 │
-├─ Gain Multiplier:
-│  └─ Every 15s without damage: +0.5x
-│
-└─ Reset Multiplier:
-   └─ On taking damage: reset to 1.0x
+└─ Ministry Taxation:
+   ├─ Flat deduction of ₹0.30
+   └─ Happens exactly every 12.0 seconds
 ```
 
 ---
@@ -308,15 +307,32 @@ General Spawn Geometry:
 ### Probability Distribution
 
 ```
-crumb:  55% ██████████
-speed:  20% ████
-shield: 15% ███
+coin:   40% ████████
+crumb:  30% ██████
+shield: 10% ██
+speed:  10% ██
 ally:   10% ██
 ```
 
 ---
 
-### 6.1 Crumb
+### 6.1 Coins
+
+**On Pickup:**
+
+```
+Effect: +₹1.00 added to balance
+
+Spawn Group Probabilities (when a coin spawn triggers):
+  ├─ 80%: 1 coin (Single at spawn point)
+  ├─ 15%: 2 coins (Side by side, 20px apart)
+  ├─  4%: 5 coins (Tight ring, 12–26px radius)
+  └─  1%: 10 coins (Tight ring, 18–30px radius)
+```
+
+---
+
+### 6.2 Crumb
 
 **On Pickup:**
 
@@ -325,12 +341,12 @@ If lives < maxLives:
   └─ +1 heart ❤️
   
 Else (maxed hearts):
-  └─ +100 score
+  └─ Ignored
 ```
 
 ---
 
-### 6.2 Shield (Grease Shield)
+### 6.3 Shield (Grease Shield)
 
 **On Pickup:**
 
@@ -346,7 +362,7 @@ Protection Scope:
 
 ---
 
-### 6.3 Speed (Speed Tantrum)
+### 6.4 Speed (Speed Tantrum)
 
 **On Pickup:**
 
@@ -361,7 +377,7 @@ Visual Feedback:
 
 ---
 
-### 6.4 Ally Pickup
+### 6.5 Ally Pickup
 
 **On Pickup:**
 
@@ -489,7 +505,7 @@ triggerDamage(source):
 
 ### Behavior
 
-Managed by `popups.js`:
+Managed within `game.js`:
 
 ```
 Spawn Cadence:
@@ -577,6 +593,16 @@ Hint reappears:
 - **Toggle switch** initiates gameplay transition
 - **Control mode radio** selection (Follow vs Joystick)
 - Selected mode applied at runtime
+
+### Feedback System (File Grievance)
+
+```
+File Grievance Button:
+  ├─ Located on the landing page
+  ├─ Opens a centered modal overlay
+  ├─ Uses Web3Forms API to send emails directly to developer
+  └─ Required Field: Message | Optional: Email Address
+```
 
 ### Layout Design
 

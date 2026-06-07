@@ -32,6 +32,8 @@ class GameEngine {
 
     // Controller state
     this.mouse = { x: 0, y: 0 };
+    // Tracks active finger for follow-mode on mobile
+    this.touch = { active: false, x: 0, y: 0 };
     this.joystick = {
       active: false,
       startX: 0,
@@ -74,8 +76,8 @@ class GameEngine {
 
     // Tax system
     this.taxTimer = 0;
-    this.taxInterval = 20.0; // every 20 seconds
-    this.taxRate = 0.30; // 30% deduction
+    this.taxInterval = 12.0; // every 12 seconds
+    this.taxAmount = 0.30; // flat ₹0.30 deduction every 12 seconds
     this.lastTaxAmount = 0;
 
     // Sound control
@@ -104,7 +106,7 @@ class GameEngine {
     this._listeners.push({ target: window, event: 'resize', handler: resizeHandler });
     window.addEventListener('resize', resizeHandler);
 
-    // Unified pointer/mouse/touch handler for follow-cursor mode
+    // Unified pointer/mouse handler for follow-cursor mode (desktop)
     const pointerMoveHandler = (e) => {
       this.mouse.x = e.clientX;
       this.mouse.y = e.clientY;
@@ -113,6 +115,32 @@ class GameEngine {
     this._listeners.push({ target: window, event: 'pointerdown', handler: pointerMoveHandler });
     window.addEventListener('pointermove', pointerMoveHandler);
     window.addEventListener('pointerdown', pointerMoveHandler);
+
+    // Touch tracking for follow-finger mode on mobile
+    const touchStartHandler = (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      this.touch.active = true;
+      this.touch.x = t.clientX;
+      this.touch.y = t.clientY;
+    };
+    const touchMoveHandler = (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      this.touch.x = t.clientX;
+      this.touch.y = t.clientY;
+    };
+    const touchEndHandler = () => {
+      this.touch.active = false;
+    };
+    this._listeners.push({ target: window, event: 'touchstart', handler: touchStartHandler, passive: true });
+    this._listeners.push({ target: window, event: 'touchmove', handler: touchMoveHandler, passive: true });
+    this._listeners.push({ target: window, event: 'touchend', handler: touchEndHandler });
+    this._listeners.push({ target: window, event: 'touchcancel', handler: touchEndHandler });
+    window.addEventListener('touchstart', touchStartHandler, { passive: true });
+    window.addEventListener('touchmove', touchMoveHandler, { passive: true });
+    window.addEventListener('touchend', touchEndHandler);
+    window.addEventListener('touchcancel', touchEndHandler);
 
     this.setupJoystick();
     this.state = 'LANDING';
@@ -374,7 +402,7 @@ class GameEngine {
     popup.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-red-900/95 border-2 md:border-4 border-red-600 text-red-100 px-3 py-2 md:px-6 md:py-4 rounded shadow-2xl z-50 font-mono text-center pointer-events-none';
     popup.style.animation = 'pulse 0.5s ease-in-out';
     popup.innerHTML = `
-      <div class="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-1">30% TAX DEDUCTED</div>
+      <div class="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-1">₹0.30 TAX DEDUCTED</div>
       <div class="text-sm md:text-2xl font-bold text-red-300">-${amount.toFixed(2)} Rs</div>
     `;
     document.body.appendChild(popup);
@@ -496,15 +524,10 @@ class GameEngine {
       this.taxTimer = 0;
       this.survivalTime = Math.floor(this.survivalTime);
 
-      // Apply tax regardless of amount
-      this.lastTaxAmount = this.money * this.taxRate;
-      this.money -= this.lastTaxAmount;
+      // Flat ₹0.30 deduction every 12 seconds — score can go negative
+      this.lastTaxAmount = 0.30;
+      this.money -= 0.30;
       this.showTaxPopup(this.lastTaxAmount);
-    }
-
-    // Money floor at 0 (no bankruptcy)
-    if (this.money < 0) {
-      this.money = 0;
     }
 
     // --- Movement calculation ---
@@ -519,15 +542,25 @@ class GameEngine {
       moveY = this.joystick.vy;
       targetAngle = Math.atan2(moveY, moveX);
       isMoving = Math.hypot(moveX, moveY) > 0.15;
+    } else if (!this.isMobile && this.touch.active) {
+      // Follow-finger mode on mobile: cockroach chases held finger position
+      const dx = this.touch.x - window.innerWidth / 2;
+      const dy = this.touch.y - window.innerHeight / 2;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 20) {
+        targetAngle = Math.atan2(dy, dx);
+        const intensity = Math.min(1.0, dist / 150);
+        moveX = Math.cos(targetAngle) * intensity;
+        moveY = Math.sin(targetAngle) * intensity;
+        isMoving = true;
+      }
     } else if (!this.isMobile) {
-      // Mouse movement relative to screen center
+      // Mouse movement on desktop
       const dx = this.mouse.x - window.innerWidth / 2;
       const dy = this.mouse.y - window.innerHeight / 2;
       const dist = Math.hypot(dx, dy);
-
-      if (dist > 30) { // Deadzone
+      if (dist > 30) {
         targetAngle = Math.atan2(dy, dx);
-        // Normalize speed based on mouse distance (caps at 150px)
         const intensity = Math.min(1.0, dist / 180);
         moveX = Math.cos(targetAngle) * intensity;
         moveY = Math.sin(targetAngle) * intensity;
@@ -724,25 +757,24 @@ class GameEngine {
     const ry = this.player.y + Math.sin(angle) * dist;
 
     const r = Math.random();
-    let type = 'coin';
 
     if (r < 0.40) {
-      type = 'coin'; // coin (40%) - primary money collection
-    } else if (r < 0.70) {
-      type = 'crumb'; // crumb (30%) - health only
-    } else if (r < 0.80) {
-      type = 'shield'; // shield (10%)
-    } else if (r < 0.90) {
-      type = 'speed'; // speed boost (10%)
-    } else {
-      type = 'ally'; // ally (5%)
+      // Coin spawn — group system (80/15/5 split)
+      this.spawnCoinGroup(rx, ry);
+      return;
     }
+
+    let type;
+    if (r < 0.70)      type = 'crumb';   // 30%
+    else if (r < 0.80) type = 'shield';  // 10%
+    else if (r < 0.90) type = 'speed';   // 10%
+    else               type = 'ally';    // 10%
 
     this.collectibles.push({
       type,
       x: rx,
       y: ry,
-      radius: type === 'coin' ? 10 : 14,
+      radius: 14,
       bounce: 0,
       bounceSpeed: 0.05 + Math.random() * 0.03,
       guideTime: type === 'ally' ? 5.0 : 0,
@@ -750,6 +782,51 @@ class GameEngine {
       roamAngle: Math.random() * Math.PI * 2,
       roamTurn: (Math.random() * 0.08) - 0.04,
       roamSpeed: 0.08 + Math.random() * 0.08
+    });
+  }
+
+  spawnCoinGroup(cx, cy) {
+    const roll = Math.random();
+    let offsets = [];
+
+    if (roll < 0.01) {
+      // 1% — 10 coins tight ring, 18–30px from center
+      for (let i = 0; i < 10; i++) {
+        const a = (i / 10) * Math.PI * 2 + Math.random() * 0.3;
+        const d = 18 + Math.random() * 12; // 18–30px
+        offsets.push({ x: Math.cos(a) * d, y: Math.sin(a) * d });
+      }
+    } else if (roll < 0.05) {
+      // 4% — 5 coins tight ring, 12–26px from center
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + Math.random() * 0.5;
+        const d = 12 + Math.random() * 14; // 12–26px
+        offsets.push({ x: Math.cos(a) * d, y: Math.sin(a) * d });
+      }
+    } else if (roll < 0.20) {
+      // 15% — 2 coins side by side, 20px apart
+      const a = Math.random() * Math.PI * 2;
+      offsets.push({ x:  Math.cos(a) * 20, y:  Math.sin(a) * 20 });
+      offsets.push({ x: -Math.cos(a) * 20, y: -Math.sin(a) * 20 });
+    } else {
+      // 80% — single coin
+      offsets.push({ x: 0, y: 0 });
+    }
+
+    offsets.forEach(off => {
+      this.collectibles.push({
+        type: 'coin',
+        x: cx + off.x,
+        y: cy + off.y,
+        radius: 10,
+        bounce: 0,
+        bounceSpeed: 0.05 + Math.random() * 0.03,
+        guideTime: 0,
+        expireTime: 0,
+        roamAngle: Math.random() * Math.PI * 2,
+        roamTurn: (Math.random() * 0.08) - 0.04,
+        roamSpeed: 0.08 + Math.random() * 0.08
+      });
     });
   }
 
@@ -902,7 +979,7 @@ class GameEngine {
 
         else if (c.type === 'coin') {
           // Add rupees
-          this.addMoney(0.50);
+          this.addMoney(1.00);
           this.spawnParticles(c.x, c.y, '#fbbf24', 10);
         }
 
