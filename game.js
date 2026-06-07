@@ -1038,19 +1038,26 @@ class GameEngine {
   draw() {
     if (!this.ctx) return;
 
+    // Optional zoom for mobile to see more area
+    const zoom = this.isMobile ? 0.65 : 1.0;
+    const vWidth = this.canvas.width / zoom;
+    const vHeight = this.canvas.height / zoom;
+
     // Clear Canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Cam focus: player stays in middle of screen
-    const camX = this.player.x - this.canvas.width / 2;
-    const camY = this.player.y - this.canvas.height / 2;
-
     this.ctx.save();
+    this.ctx.scale(zoom, zoom);
+
+    // Cam focus: player stays in middle of screen
+    const camX = this.player.x - vWidth / 2;
+    const camY = this.player.y - vHeight / 2;
+
     // Translate renderer backwards so world content moves opposite player
     this.ctx.translate(-camX, -camY);
 
     // 1. Draw floor tiles background (camera-relative infinite grid)
-    this.drawKitchenFloor(camX, camY);
+    this.drawKitchenFloor(camX, camY, vWidth, vHeight);
 
     // 2. Draw grease stains
     this.greaseStains.forEach(s => {
@@ -1086,13 +1093,13 @@ class GameEngine {
     this.ctx.restore();
   }
 
-  drawKitchenFloor(camX, camY) {
+  drawKitchenFloor(camX, camY, vWidth = this.canvas.width, vHeight = this.canvas.height) {
     const tileSize = 120;
     const pad = tileSize * 2;
     const left = camX - pad;
-    const right = camX + this.canvas.width + pad;
+    const right = camX + vWidth + pad;
     const top = camY - pad;
-    const bottom = camY + this.canvas.height + pad;
+    const bottom = camY + vHeight + pad;
 
     // Fill only the visible region (+padding), not an ever-growing world.
     this.ctx.fillStyle = '#292524';
