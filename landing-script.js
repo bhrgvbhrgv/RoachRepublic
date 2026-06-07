@@ -73,6 +73,19 @@ document.querySelectorAll('input[name="control-mode"]').forEach((el) => {
   });
 });
 
+// Auto-detect mobile and default to joystick
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+if (isTouchDevice) {
+  const joyRadio = document.querySelector('input[value="joystick"]');
+  if (joyRadio) {
+    joyRadio.checked = true;
+    // We defer the setControlMode slightly to ensure gameEngine is initialized
+    setTimeout(() => {
+      if (window.gameEngine) window.gameEngine.setControlMode('joystick');
+    }, 100);
+  }
+}
+
 // 2. Playable game animation loop
 function gameLoop(time) {
   if (!window.gameEngine || window.gameEngine.state === 'INIT' || window.gameEngine.state === 'LANDING') return;

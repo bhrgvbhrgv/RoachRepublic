@@ -178,6 +178,7 @@ class GameEngine {
     this.updateControlMode();
 
     const handleStart = (e) => {
+      if (e.cancelable && e.type !== 'pointerdown') e.preventDefault();
       if (this.state !== 'PLAYING') return;
       const touch = e.touches ? e.touches[0] : e;
       this.joystick.active = true;
@@ -191,6 +192,7 @@ class GameEngine {
 
     const handleMove = (e) => {
       if (!this.joystick.active || this.state !== 'PLAYING') return;
+      if (e.cancelable && e.type !== 'pointermove') e.preventDefault();
       const touch = e.touches ? e.touches[0] : e;
       this.joystick.curX = touch.clientX;
       this.joystick.curY = touch.clientY;
