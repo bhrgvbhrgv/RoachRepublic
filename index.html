@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Roach Republic - Bureaucratic Crevice Survival Game</title>
+  <meta name="description" content="Skitter, dodge slippers, and resist the sanitation audit in this satirical survival web game. Survive the bureaucratic nightmare of the Roach Republic.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bureau: {
+              paper: '#f4ecd8',
+              paperDark: '#e3d7bb',
+              ink: '#1c1917',
+              red: '#dc2626',
+              green: '#16a34a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-full bg-stone-950 text-stone-200 overflow-hidden relative scanlines">
+
+  <!-- Fullscreen Damage Flash Effect Layer -->
+  <div id="flash-effect" class="absolute inset-0 pointer-events-none z-50 transition-all"></div>
+  <div class="fixed bottom-2 left-0 z-[60] bg-black text-white text-[8px] leading-none px-2 py-1 font-mono">
+    V-00.01.00
+  </div>
+
+  <!-- ==================== LAYER 1: THE sterile LIGHT STATE (LANDING PAGE) ==================== -->
+  <div id="landing-screen" class="absolute inset-0 bg-stone-100 flex flex-col items-center justify-between p-2 z-30 transition-all duration-[800ms] text-stone-900 overflow-hidden">
+    
+    <!-- Lightbulb cord & glow container -->
+    <div class="relative z-30 w-full flex flex-col items-center -mt-14">
+      <!-- Swinging Cord and Bulb (SVG) -->
+      <svg class="lightbulb-cord w-20 h-40 cursor-pointer" viewBox="0 0 100 200" overflow="visible">
+        <line id="bulb-line" x1="50" y1="0" x2="50" y2="150" stroke="#292524" stroke-width="4" />
+        <!-- Bulb fixture -->
+        <rect id="bulb-fixture" x="42" y="145" width="16" height="15" fill="#78716c" rx="2" />
+        <!-- Glowing bulb -->
+        <circle id="bulb-glass" cx="50" cy="170" r="18" fill="#fef08a" stroke="#292524" stroke-width="3" />
+        <ellipse id="bulb-reflection" cx="50" cy="168" rx="8" ry="4" fill="#ffffff" opacity="0.6"/>
+      </svg>
+      <div id="bulb-shadow" class="bulb-shadow absolute w-44 h-14 rounded-full"></div>
+      <div id="bulb-hint" class="bulb-hint absolute left-[58%] top-20 max-w-[220px] bg-yellow-100/95 border-2 border-stone-800 text-stone-800 px-3 py-2 rounded shadow-md text-[11px] leading-snug">
+        Grab the bulb to file Form 11-G: Mandatory Wiggle Compliance.
+      </div>
+    </div>
+
+    <!-- Main Satirical Landing Content -->
+    <div class="relative z-20 max-w-[660px] w-full text-center flex flex-col items-center my-auto px-2">
+      <div class="border-4 border-stone-800 bg-stone-50 p-3 rounded shadow-xl relative w-full mb-3">
+        <!-- Official Bureaucracy Stamp -->
+        <div class="stamp border-4 border-dashed border-red-700 text-red-700 font-bold px-4 py-1.5 text-lg absolute bottom-6 right-4 uppercase rotate-15">
+          RR APPROVED
+        </div>
+        
+        <h1 class="font-elite text-2xl font-extrabold text-stone-900 tracking-tight leading-none mb-1">
+          ROACH REPUBLIC
+        </h1>
+        <p class="font-mono text-[10px] text-stone-500 uppercase tracking-widest border-b border-stone-300 pb-2 mb-4">
+          Form 0-A: Crevice Skitter Authorization Request
+        </p>
+        
+        <div class="text-left font-sans text-[11px] text-stone-700 leading-relaxed space-y-1.5 mb-3">
+          <p><strong>How to Play (Public Notice):</strong> Move your comrade cockroach with mouse (desktop) or joystick (mobile). Survive as long as possible and keep collecting crumbs.</p>
+          <p><strong>Avoid State Action:</strong> Dodge chappals, stay out of Bygone pest spray gas, and escape torch sweeps. In this republic, every spotlight is an inquiry commission.</p>
+          <p><strong>Collect Benefits:</strong> Grab crumbs for health, grease shield for temporary immunity, and speed boost for emergency manifesto-level running.</p>
+          <p><strong>Bureaucratic Reality:</strong> Popups are compulsory paperwork. Clear them fast for points, or let them expire and pay the usual inefficiency tax.</p>
+          <p class="font-semibold text-stone-900">Flip the heavy-duty switch below to begin <br>your five-year survival plan.</p>
+        </div>
+      </div>
+      <div class="w-full flex items-center justify-center gap-3 flex-nowrap">
+        <div class="border-2 border-stone-700 rounded p-2 bg-stone-200 w-[58%] min-w-0">
+          <p class="font-mono text-[10px] font-bold uppercase tracking-wider text-stone-700 mb-1">Ministry Steering Directive</p>
+          <div class="flex items-center justify-center gap-2 text-[10px] font-mono text-stone-800">
+            <label class="flex items-center gap-1 whitespace-nowrap"><input type="radio" name="control-mode" value="follow" checked> Follow</label>
+            <label class="flex items-center gap-1 whitespace-nowrap"><input type="radio" name="control-mode" value="joystick"> Joystick</label>
+          </div>
+        </div>
+        <div class="flex flex-col items-center w-[42%] min-w-0">
+          <button id="simple-switch" class="switch-track mt-1" aria-label="Flip Light Switch">
+            <span id="simple-switch-knob" class="switch-knob"></span>
+          </button>
+          <p class="mt-1 font-mono text-[9px] text-stone-600 uppercase tracking-wider text-center">
+            Emergency Order 19-B: <strong class="text-stone-900">Flip to approve nationwide darkness.</strong>
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ==================== LAYER 2: DARK STATE (ACTIVE GAMEPLAY SCREEN) ==================== -->
+  <div id="game-screen" class="absolute inset-0 z-10 flex flex-col md:flex-row hidden opacity-0 transition-opacity duration-700">
+    
+    <!-- Gameplay Main Arena (Left side) -->
+    <div class="flex-grow h-full relative overflow-hidden">
+      <!-- Game Canvas -->
+      <canvas id="game-canvas" class="block w-full h-full bg-stone-900"></canvas>
+      
+      <!--  HUD panel -->
+      <div class="absolute top-2 left-2 p-1 rounded glassmorphic shadow-2xl flex flex-col gap-0.5 pointer-events-none select-none z-20 border border-red-950 max-w-[9.5rem]">
+        <div class="flex items-center justify-between gap-2 border-b border-stone-800 pb-0.5">
+          <div class="flex flex-col">
+            <span class="font-elite text-[6px] tracking-wider text-red-600 font-extrabold">RR LEATHER TOLERANCE</span>
+            <div id="hud-hearts" class="flex gap-0.5 mt-0">
+              <!-- Hearts injected via JS -->
+            </div>
+            <button id="pause-trigger" class="mt-1 py-0.5 px-1 bg-stone-900/80 hover:bg-stone-800 border border-stone-700 text-stone-300 font-elite text-[6px] tracking-wider uppercase rounded shadow transition-all hover:border-red-900 active:scale-95 pointer-events-auto">
+              Pause (Form 32-B)
+            </button>
+          </div>
+          <div class="flex flex-col items-end">
+            <span class="font-mono text-[5px] text-red-500">PEAK MONEY</span>
+            <span id="mult-value" class="font-retro text-[11px] text-red-400">₹ 0.00</span>
+          </div>
+        </div>
+        
+        <div class="flex items-baseline justify-between mt-0">
+          <span class="font-mono text-[6px] text-stone-400">TOTAL MONEY:</span>
+          <span id="score-value" class="font-retro text-[15px] text-yellow-500 font-bold tracking-wider">₹ 0.00</span>
+        </div>
+        <span class="font-mono text-[5px] text-red-500">(TAX: 30% EVERY 20S)</span>
+        <div class="mt-0 grid grid-cols-2 gap-x-1 gap-y-0 text-[5px] font-mono text-stone-400">
+          <span>LEATHER IMPACTS:</span><span id="chappal-hits-value" class="text-red-400 text-right">0</span>
+          <span>CABINET ROACHES:</span><span id="dead-allies-value" class="text-orange-400 text-right">0</span>
+          <span>BEST SCORE:</span><span id="high-score-value" class="text-yellow-400 text-right">0</span>
+        </div>
+
+        <!-- Powerup HUD visual bars -->
+        <div class="flex flex-col gap-0.5 mt-0.5 text-[5px] font-mono">
+          <!-- Shield timer -->
+          <div id="shield-hud" class="hidden flex flex-col gap-0">
+            <span class="text-yellow-400 font-bold">GREASE SHIELD</span>
+            <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden border border-stone-700">
+              <div class="hud-timer-bar bg-yellow-400 h-full w-full"></div>
+            </div>
+          </div>
+          <!-- Speed timer -->
+          <div id="speed-hud" class="hidden flex flex-col gap-0">
+            <span class="text-orange-400 font-bold">SPEED TANTRUM</span>
+            <div class="w-full bg-stone-800 h-1 rounded-full overflow-hidden border border-stone-700">
+              <div class="hud-timer-bar bg-orange-500 h-full w-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form 32-B (Pause Button) (top right) -->
+      <!-- Chaotic Popups Spawn Anchor (All dynamically spawned cards go here) -->
+      <div id="popup-anchor" class="absolute inset-0 pointer-events-none z-20"></div>
+
+      <!-- Mobile Joystick Controller -->
+      <div id="joystick-container" class="hidden absolute bottom-8 left-1/2 -translate-x-1/2 w-24 h-24 bg-stone-900/70 border-4 border-stone-700/50 rounded-full select-none z-20">
+        <div id="joystick-thumb" class="absolute w-12 h-12 bg-red-700 border-2 border-stone-800 rounded-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 cursor-pointer shadow-md"></div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== LAYER 3: OVERLAYS (PAUSE & GAME OVER SCREEN) ==================== -->
+
+  <!-- Form 32-B: Pause Overlay Menu -->
+  <div id="pause-menu" class="absolute inset-0 bg-stone-950/80 z-40 flex items-center justify-center hidden">
+    <div class="bg-[#f4ecd8] border-4 border-stone-800 p-6 md:p-8 max-w-sm w-full text-stone-900 rounded shadow-2xl relative mx-4">
+      <div class="stamp border-4 border-dashed border-red-700 text-red-700 font-bold px-3 py-1 text-xs absolute top-4 right-2 uppercase rotate-12">
+        suspended
+      </div>
+      
+      <h2 class="font-elite text-2xl font-extrabold tracking-tight border-b-2 border-stone-800 pb-2 mb-4 uppercase">
+        FORM 32-B: ACTIVITY SUSPENSION
+      </h2>
+      <p class="font-mono text-[10px] text-stone-600 leading-relaxed mb-6">
+        As mandated by the RR cabinet, your skittering authorization has been frozen. Administrative procedures have been paused.
+      </p>
+
+      <div class="flex flex-col gap-3">
+        <div class="border border-stone-400 rounded p-3 bg-stone-100">
+          <p class="font-mono text-[10px] font-bold text-stone-700 uppercase tracking-wider mb-2">Audio Control</p>
+          <div class="flex items-center justify-between gap-3 mb-2">
+            <label for="pause-volume" class="font-mono text-[10px] text-stone-700 uppercase">Volume</label>
+            <input id="pause-volume" type="range" min="0" max="100" value="80" class="w-36 accent-stone-800">
+          </div>
+          <button id="pause-mute-btn" class="w-full py-1.5 bg-stone-800 hover:bg-stone-700 text-[#f4ecd8] font-bold text-[10px] tracking-wider uppercase rounded font-mono">
+            Mute Audio
+          </button>
+        </div>
+        <button id="resume-btn" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-[#f4ecd8] font-bold text-xs tracking-wider uppercase rounded shadow transition-colors font-mono">
+          Return to Skittering (Resume)
+        </button>
+        <button id="exit-btn" class="w-full py-2 bg-stone-200 hover:bg-stone-300 border border-stone-400 text-stone-700 font-bold text-xs tracking-wider uppercase rounded transition-colors font-mono">
+          Exit to Bureaucracy (Quit)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Repression Complete (Game Over) Overlay Menu -->
+  <div id="game-over-screen" class="absolute inset-0 bg-stone-950/90 z-40 flex items-center justify-center hidden">
+    <div class="bg-[#f4ecd8] border-4 border-stone-800 p-6 md:p-8 max-w-sm w-full text-stone-900 rounded shadow-2xl relative mx-4">
+      <div class="stamp border-4 border-dashed border-red-700 text-red-700 font-bold px-3 py-1 text-xs absolute top-4 right-2 uppercase rotate-12">
+        rejected
+      </div>
+      
+      <h2 class="font-elite text-2xl font-extrabold tracking-tight text-red-700 border-b-2 border-stone-800 pb-2 mb-2 uppercase">
+        REPRESSION AUDIT COMPLETE
+      </h2>
+      <p class="font-mono text-[9px] text-stone-600 tracking-wider uppercase border-b border-stone-300 pb-2 mb-4">
+        Case File: Defeated Cockroach #9082
+      </p>
+      
+      <div class="bg-stone-200/60 p-4 rounded mb-6 text-center font-mono">
+        <span class="text-xs text-stone-500 uppercase tracking-widest">Final Cash Balance</span>
+        <div id="final-score" class="text-4xl font-retro font-bold text-stone-900 mt-1">₹ 0.00</div>
+        <p class="text-[9px] text-stone-500 mt-2">Account Status: LIQUIDATED</p>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <button id="restart-btn" class="w-full py-2.5 bg-stone-800 hover:bg-stone-700 text-[#f4ecd8] font-bold text-xs tracking-wider uppercase rounded shadow transition-colors font-mono">
+          Revolt Again (Restart)
+        </button>
+        <button id="exit-gameover-btn" class="w-full py-2 bg-stone-200 hover:bg-stone-300 border border-stone-400 text-stone-700 font-bold text-xs tracking-wider uppercase rounded transition-colors font-mono">
+          Request Relocation
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==================== SCRIPTS ==================== -->
+
+  <!-- Lucide Icons -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+
+  <!-- Game Modules -->
+  <script src="audio.js"></script>
+  <script src="popups.js"></script>
+  <script src="game.js"></script>
+  <script src="landing-script.js"></script>
+</body>
+</html>

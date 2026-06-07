@@ -1,0 +1,250 @@
+/* Import premium retro fonts */
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Special+Elite&family=VT323&family=Noto+Emoji:wght@300..700&display=swap');
+
+:root {
+  --bureaucratic-yellow: #f4ecd8;
+  --bureaucratic-dark: #1c1917;
+  --hazard-red: #dc2626;
+  --neon-red: #ff3838;
+}
+
+body {
+  font-family: 'Courier Prime', Courier, monospace;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  background-color: var(--bureaucratic-dark);
+}
+
+/* Custom Typographic Styles */
+.font-elite {
+  font-family: 'Special Elite', cursive, serif;
+}
+
+.font-retro {
+  font-family: 'VT323', monospace;
+}
+
+/* Emoji font styling */
+.emoji {
+  font-family: 'Noto Emoji', 'Noto Color Emoji', sans-serif !important;
+}
+
+/* Swinging lightbulb physics simulation */
+.lightbulb-cord {
+  transform-origin: top center;
+  /* animation: swing 6s ease-in-out infinite alternate; */
+}
+
+.bulb-shadow {
+  background: radial-gradient(ellipse at center,
+      rgba(250, 204, 21, 0.72) 0%,
+      rgba(250, 204, 21, 0.38) 42%,
+      rgba(250, 204, 21, 0.12) 65%,
+      rgba(250, 204, 21, 0) 85%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+
+.bulb-hint {
+  animation: bulbHintFloat 1.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes bulbHintFloat {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+.switch-track {
+  width: 120px;
+  height: 52px;
+  border: 3px solid #292524;
+  background: #d6d3d1;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.switch-knob {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #fafaf9;
+  border: 2px solid #1c1917;
+  transform: translateX(0);
+  transition: transform 220ms ease;
+}
+
+.switch-knob.switch-on {
+  transform: translateX(64px);
+}
+
+@keyframes swing {
+  0% {
+    transform: rotate(-10deg);
+  }
+
+  100% {
+    transform: rotate(10deg);
+  }
+}
+
+/* Shaking animation for chaotic popups */
+.popup-shake {
+  animation: shake 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+
+  30% {
+    transform: translate(0px, 2px) rotate(0deg);
+  }
+
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+
+  70% {
+    transform: translate(2px, 1px) rotate(-2deg);
+  }
+
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+
+  90% {
+    transform: translate(2px, 2px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+}
+
+/* Shatter/Explode animation for popups */
+.popup-shatter {
+  animation: shatter 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes shatter {
+  0% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.3) rotate(12deg) translateY(30px);
+    filter: blur(8px);
+  }
+}
+
+/* Flash screen red on taking damage */
+.damage-flash {
+  animation: flash 0.15s ease-out 1;
+}
+
+@keyframes flash {
+  0% {
+    background-color: rgba(220, 38, 38, 0.5);
+  }
+
+  100% {
+    background-color: rgba(220, 38, 38, 0);
+  }
+}
+
+/* Administrative hazard striped border styling */
+.hazard-border {
+  background-image: repeating-linear-gradient(-45deg,
+      #facc15,
+      #facc15 10px,
+      #000000 10px,
+      #000000 20px);
+}
+
+/* Simulated stamp overlay */
+.stamp {
+  font-family: 'Special Elite', serif;
+  transform: rotate(-15deg);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+  display: inline-block;
+  mix-blend-mode: multiply;
+}
+
+/* Glassmorphism panel styling */
+.glassmorphic {
+  background: rgba(28, 25, 23, 0.46);
+  backdrop-filter: blur(7px);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+/* Refrigerator scanline grids */
+.scanlines {
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06));
+  background-size: 100% 4px, 6px 100%;
+}
+
+/* Mobile Virtual Joystick Elements */
+#joystick-container {
+  touch-action: none;
+}
+
+/* Simple typewriter reveal */
+.typewriter {
+  overflow: hidden;
+  border-right: .15em solid orange;
+  white-space: nowrap;
+  animation: typing 2.5s steps(40, end), blink-caret .75s step-end infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0
+  }
+
+  to {
+    width: 100%
+  }
+}
+
+@keyframes blink-caret {
+
+  from,
+  to {
+    border-color: transparent
+  }
+
+  50% {
+    border-color: orange
+  }
+}
