@@ -398,16 +398,60 @@ class GameEngine {
   }
 
   showTaxPopup(amount) {
-    const popup = document.createElement('div');
-    popup.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-red-900/95 border-2 md:border-4 border-red-600 text-red-100 px-3 py-2 md:px-6 md:py-4 rounded shadow-2xl z-50 font-mono text-center pointer-events-none';
-    popup.style.animation = 'pulse 0.5s ease-in-out';
-    popup.innerHTML = `
-      <div class="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-1">₹0.30 TAX DEDUCTED</div>
-      <div class="text-sm md:text-2xl font-bold text-red-300">-${amount.toFixed(2)} Rs</div>
-    `;
-    document.body.appendChild(popup);
+    if (this.money > 5.00) {
+      // Positive Balance (> ₹5.00): silent, clean animation. No popup.
+      const scoreEl = document.getElementById('score-value');
+      if (scoreEl) {
+        const rect = scoreEl.getBoundingClientRect();
+        const floatingText = document.createElement('div');
+        floatingText.className = 'fixed text-stone-300 font-retro text-sm font-bold pointer-events-none transition-all duration-1000 z-50';
+        floatingText.style.left = `${rect.left}px`;
+        floatingText.style.top = `${rect.top}px`;
+        floatingText.innerText = `-${amount.toFixed(2)}`;
+        document.body.appendChild(floatingText);
+        
+        void floatingText.offsetWidth; // Force reflow
+        floatingText.style.transform = 'translateY(-20px)';
+        floatingText.style.opacity = '0';
+        setTimeout(() => floatingText.remove(), 1000);
+      }
+    } else if (this.money > 0.00) {
+      // Low Balance (₹0.01 - ₹5.00): Text turns yellow. Subtle notification.
+      const popup = document.createElement('div');
+      popup.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-yellow-900/90 border border-yellow-600 text-yellow-100 px-3 py-1.5 md:px-5 md:py-3 rounded shadow-lg z-50 font-mono text-center pointer-events-none transition-opacity duration-1000';
+      popup.innerHTML = `
+        <div class="text-[8px] md:text-xs uppercase tracking-wider mb-0.5 text-yellow-300">Tax Deducted</div>
+        <div class="text-xs md:text-sm font-bold text-yellow-400">-${amount.toFixed(2)} Rs</div>
+      `;
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        popup.style.opacity = '0';
+        setTimeout(() => popup.remove(), 1000);
+      }, 1000);
+    } else {
+      // Danger Zone (<= ₹0.00): High-alert visual assets.
+      const popup = document.createElement('div');
+      popup.className = 'fixed bottom-4 left-1/2 -translate-x-1/2 md:left-4 md:translate-x-0 bg-red-900/95 border-2 md:border-4 border-red-600 text-red-100 px-3 py-2 md:px-6 md:py-4 rounded shadow-2xl z-50 font-mono text-center pointer-events-none popup-shake';
+      popup.innerHTML = `
+        <div class="text-[10px] md:text-sm font-bold uppercase tracking-wider mb-1">DANGER: TAX DEDUCTED</div>
+        <div class="text-sm md:text-2xl font-bold text-red-400">-${amount.toFixed(2)} Rs</div>
+      `;
+      document.body.appendChild(popup);
+      setTimeout(() => popup.remove(), 2000);
 
-    setTimeout(() => popup.remove(), 2000);
+      // Flashing red overlay
+      const flash = document.getElementById('flash-effect');
+      if (flash) {
+        flash.classList.add('bg-red-600/30');
+        setTimeout(() => flash.classList.remove('bg-red-600/30'), 300);
+      }
+
+      // Play alarm/damage sound
+      if (window.audio && window.audio.playHit) {
+        window.audio.playHit();
+      }
+    }
   }
 
   pauseGame() {
@@ -524,9 +568,20 @@ class GameEngine {
       this.taxTimer = 0;
       this.survivalTime = Math.floor(this.survivalTime);
 
-      // Flat ₹0.30 deduction every 12 seconds — score can go negative
-      this.lastTaxAmount = 0.30;
-      this.money -= 0.30;
+      // Multi-Tiered Dynamic Tax Brackets
+      let taxAmount = 0;
+      if (this.money <= 0.00) {
+        taxAmount = 0.10;
+      } else if (this.money <= 10.00) {
+        taxAmount = 0.40;
+      } else if (this.money <= 30.00) {
+        taxAmount = 0.80;
+      } else {
+        taxAmount = 1.50;
+      }
+
+      this.lastTaxAmount = taxAmount;
+      this.money = Math.max(-5.00, this.money - taxAmount);
       this.showTaxPopup(this.lastTaxAmount);
     }
 
@@ -659,9 +714,15 @@ class GameEngine {
 
     // 4. Collectibles
     this.spawnTimers.collectible += dt;
-    if (this.spawnTimers.collectible >= 2.0) { // check every 2 seconds (100% increase)
+    const activeCount = this.collectibles.length;
+    
+    if (activeCount >= 12) {
+      // Hard cap pause
       this.spawnTimers.collectible = 0;
-      if (this.collectibles.length < 8) { // max active
+    } else {
+      const currentInterval = 0.5 + (activeCount / 12) * (3.0 - 0.5);
+      if (this.spawnTimers.collectible >= currentInterval) {
+        this.spawnTimers.collectible = 0;
         this.spawnCollectible();
       }
     }
@@ -778,7 +839,7 @@ class GameEngine {
       bounce: 0,
       bounceSpeed: 0.05 + Math.random() * 0.03,
       guideTime: type === 'ally' ? 5.0 : 0,
-      expireTime: type === 'ally' ? 12.0 : 0,
+      lifespan: 12.0,
       roamAngle: Math.random() * Math.PI * 2,
       roamTurn: (Math.random() * 0.08) - 0.04,
       roamSpeed: 0.08 + Math.random() * 0.08
@@ -789,27 +850,20 @@ class GameEngine {
     const roll = Math.random();
     let offsets = [];
 
-    if (roll < 0.01) {
-      // 1% — 10 coins tight ring, 18–30px from center
-      for (let i = 0; i < 10; i++) {
-        const a = (i / 10) * Math.PI * 2 + Math.random() * 0.3;
-        const d = 18 + Math.random() * 12; // 18–30px
-        offsets.push({ x: Math.cos(a) * d, y: Math.sin(a) * d });
-      }
-    } else if (roll < 0.05) {
-      // 4% — 5 coins tight ring, 12–26px from center
+    if (roll < 0.20) {
+      // 20% — 5 coins tight ring, 12–26px from center
       for (let i = 0; i < 5; i++) {
         const a = (i / 5) * Math.PI * 2 + Math.random() * 0.5;
         const d = 12 + Math.random() * 14; // 12–26px
         offsets.push({ x: Math.cos(a) * d, y: Math.sin(a) * d });
       }
-    } else if (roll < 0.20) {
-      // 15% — 2 coins side by side, 20px apart
+    } else if (roll < 0.50) {
+      // 30% — 2 coins side by side, 20px apart
       const a = Math.random() * Math.PI * 2;
       offsets.push({ x:  Math.cos(a) * 20, y:  Math.sin(a) * 20 });
       offsets.push({ x: -Math.cos(a) * 20, y: -Math.sin(a) * 20 });
     } else {
-      // 80% — single coin
+      // 50% — single coin
       offsets.push({ x: 0, y: 0 });
     }
 
@@ -822,7 +876,7 @@ class GameEngine {
         bounce: 0,
         bounceSpeed: 0.05 + Math.random() * 0.03,
         guideTime: 0,
-        expireTime: 0,
+        lifespan: 12.0,
         roamAngle: Math.random() * Math.PI * 2,
         roamTurn: (Math.random() * 0.08) - 0.04,
         roamSpeed: 0.08 + Math.random() * 0.08
@@ -860,7 +914,7 @@ class GameEngine {
       bounce: 0,
       bounceSpeed: 0.05 + Math.random() * 0.03,
       guideTime: 5.0,
-      expireTime: 12.0,
+      lifespan: 12.0,
       roamAngle: Math.random() * Math.PI * 2,
       roamTurn: (Math.random() * 0.08) - 0.04,
       roamSpeed: 0.08 + Math.random() * 0.08
@@ -948,18 +1002,27 @@ class GameEngine {
     for (let i = this.collectibles.length - 1; i >= 0; i--) {
       const c = this.collectibles[i];
       c.bounce += c.bounceSpeed;
+      
+      // Lifespan Decay (Auto-Clearing)
+      if (c.lifespan !== undefined) {
+        c.lifespan -= dt;
+        if (c.lifespan <= 0) {
+          this.collectibles.splice(i, 1);
+          // Apply decay penalty
+          this.money = Math.max(-5.00, this.money - 0.10);
+          this.spawnParticles(c.x, c.y, '#9ca3af', 8); // Decay dust
+          this.updateHUD(); // Show updated money
+          continue;
+        }
+      }
+
       if (c.type === 'ally') {
         c.guideTime = Math.max(0, (c.guideTime || 0) - dt);
-        c.expireTime = Math.max(0, (c.expireTime || 0) - dt);
         c.roamAngle += c.roamTurn * dt * 60;
         c.roamTurn += (Math.random() * 0.002 - 0.001);
         c.roamTurn = Math.max(-0.04, Math.min(0.04, c.roamTurn));
         c.x += Math.cos(c.roamAngle) * c.roamSpeed;
         c.y += Math.sin(c.roamAngle) * c.roamSpeed;
-        if (c.expireTime <= 0) {
-          this.collectibles.splice(i, 1);
-          continue;
-        }
       }
 
       // Check collision

@@ -135,11 +135,14 @@ Damage Event:
 Money System:
 ├─ Primary score metric is Rupees (₹)
 ├─ Collecting coins adds ₹1.00 per coin
-├─ No bankruptcy limit (balance can go into the negatives)
+├─ Bankruptcy limit: Hard floor at -₹5.00
 │
-└─ Ministry Taxation:
-   ├─ Flat deduction of ₹0.30
-   └─ Happens exactly every 12.0 seconds
+└─ Multi-Tiered Dynamic Taxation:
+   ├─ Evaluated every 12.0 seconds based on wealth:
+   ├─ Wallet <= ₹0.00: ₹0.10
+   ├─ Wallet ₹0.01 - ₹10.00: ₹0.40
+   ├─ Wallet ₹10.01 - ₹30.00: ₹0.80
+   └─ Wallet > ₹30.00: ₹1.50
 ```
 
 ---
@@ -293,15 +296,17 @@ Spawn Position:
 
 ## 6. Power-Ups & Collectibles
 
-### Spawn Mechanics
+### Spawn Mechanics & Lifespan Decay
 
 ```
-Spawn Check Cycle: Every 4s (if active collectibles < 8)
+Reciprocal Elastic Spawn Engine:
+├─ Dynamic Interval: 0.5s (empty board) to 3.0s (crowded board)
+├─ Spawning hard-caps at 12 active items
+└─ Spawns around player at 180–800 unit distance
 
-General Spawn Geometry:
-  ├─ Around player
-  ├─ Random angle
-  └─ Distance: 180–800 units
+Lifespan Decay (Auto-Clearing):
+├─ All collectibles expire after exactly 12.0 seconds
+└─ If ignored, rotting items despawn and trigger a -₹0.10 penalty
 ```
 
 ### Probability Distribution
@@ -324,10 +329,9 @@ ally:   10% ██
 Effect: +₹1.00 added to balance
 
 Spawn Group Probabilities (when a coin spawn triggers):
-  ├─ 80%: 1 coin (Single at spawn point)
-  ├─ 15%: 2 coins (Side by side, 20px apart)
-  ├─  4%: 5 coins (Tight ring, 12–26px radius)
-  └─  1%: 10 coins (Tight ring, 18–30px radius)
+  ├─ 50%: 1 coin (Single at spawn point)
+  ├─ 30%: 2 coins (Side by side, 20px apart)
+  └─ 20%: 5 coins (Tight ring, 12–26px radius)
 ```
 
 ---
