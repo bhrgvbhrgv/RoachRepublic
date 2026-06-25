@@ -1,6 +1,10 @@
 # 🪳 Roach Republic (RR) - Full Game Mechanics Reference
 
-> **Document Scope:** Captures CURRENT implemented gameplay behavior in: `index.html`, `game.js`, `landing-script.js`, `audio.js`, `style.css`
+> **Document Scope:** Captures CURRENT implemented gameplay behavior in: `index.html`, `game.js`, `landing-script.js`, `audio.js`, `style.css`, `popups.js`
+
+> **Version:** `V-00.01.00` | **CSS Framework:** Tailwind CSS (CDN) | **Analytics:** Vercel Web Analytics
+>
+> ⚠️ `popups.js` is referenced in `index.html` but **currently missing from the repository**. All popup calls are guard-checked (`if (window.popups)`), so the game runs without it — but popup functionality (Section 9) is inactive.
 
 ---
 
@@ -77,7 +81,7 @@ Control mode is selected from **Landing radio settings**:
 - **Follow Touch/Cursor** (`mode = follow`)
 - **Joystick** (`mode = joystick`)
 
-> ℹ️ **Note:** No viewport auto-switching; mode is explicit.
+> ℹ️ **Note:** The game auto-detects touch devices and defaults to **Joystick** for touch-capable screens and **Follow** for desktop. The landing page radio syncs to this auto-detected default, but the player can manually override it.
 
 ### 2.1 Follow Mode
 
@@ -114,6 +118,8 @@ Virtual Joystick:
 | **Base Max Speed** | 5 units/frame |
 | **Starting Lives** | 3 ❤️ |
 | **Max Lives Cap** | 5 ❤️ |
+| **Starting Money** | ₹1.00 |
+| **Mobile Zoom** | 0.55x on screens < 768px wide |
 
 ### Movement & Rotation
 
@@ -134,8 +140,10 @@ Damage Event:
 ```
 Money System:
 ├─ Primary score metric is Rupees (₹)
+├─ Starting balance: ₹1.00
 ├─ Collecting coins adds ₹1.00 per coin
-├─ Bankruptcy limit: Hard floor at -₹5.00
+├─ Money floor (addMoney): ₹0.00 (cannot go negative from earning)
+├─ Bankruptcy floor (tax/decay): -₹5.00 (tax & item decay can push negative)
 │
 └─ Multi-Tiered Dynamic Taxation:
    ├─ Evaluated every 12.0 seconds based on wealth:
@@ -154,11 +162,11 @@ Money System:
 | Counter | Meaning |
 |---------|---------|
 | **RR LEATHER TOLERANCE** | Current hearts remaining |
-| **MULTIPLIER** | Active score multiplier (1.0x - 5.0x+) |
-| **TOTAL SCORE** | Current session score |
+| **PEAK MONEY** | Highest money reached this run (₹) |
+| **TOTAL MONEY** | Current money balance (₹) |
 | **LEATHER IMPACTS** | Cumulative chappal contact count |
-| **CABINET ROACHES** | Allied roaches currently following player |
-| **BEST SCORE** | High score (persisted in localStorage) |
+| **CABINET ROACHES** | Living allied roaches currently following player |
+| **BEST SCORE** | All-time high peak money (persisted in localStorage) |
 
 ### Power-Up Bars
 
@@ -242,7 +250,7 @@ Spawn Position:
 
 #### Size & Duration
 
-- **Radius:** 270 (3x larger)
+- **Radius:** 540 (doubled from original 270)
 - **Lifetime:** 6.0 seconds
 
 #### Damage Mechanics
@@ -509,7 +517,7 @@ triggerDamage(source):
 
 ### Behavior
 
-Managed within `game.js`:
+Managed by `popups.js` (currently missing from repo; all calls guarded with `if (window.popups)`):
 
 ```
 Spawn Cadence:
@@ -660,7 +668,7 @@ Chappals:
   └─ 20% front-origin, 80% random
 
 Bygone Cloud:
-  ├─ Very large radius (270)
+  ├─ Very large radius (540)
   ├─ Medium duration (6s)
   └─ Tick damage while inside
 
@@ -707,7 +715,7 @@ Chappal Settings:
 
 ```
 Bygone Settings:
-  ├─ Radius: 270
+  ├─ Radius: 540
   ├─ Life: 6s
   └─ Damage tick: every 0.8s (while inside)
 ```
