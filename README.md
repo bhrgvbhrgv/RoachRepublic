@@ -4,7 +4,7 @@
 
 > **Version:** `V-00.01.00` | **CSS Framework:** Tailwind CSS (CDN) | **Analytics:** Vercel Web Analytics
 >
-> ⚠️ `popups.js` is referenced in `index.html` but **currently missing from the repository**. All popup calls are guard-checked (`if (window.popups)`), so the game runs without it — but popup functionality (Section 9) is inactive.
+> ✅ `popups.js` is now implemented and active. The game spawns paperwork-style popup cards during play, and closing them grants +₹25 while letting them expire costs -₹10.
 
 ---
 
@@ -517,22 +517,23 @@ triggerDamage(source):
 
 ### Behavior
 
-Managed by `popups.js` (currently missing from repo; all calls guarded with `if (window.popups)`):
+Managed by `popups.js` and active during gameplay:
 
 ```
 Spawn Cadence:
-  ├─ Randomized: 4–8 seconds after each spawn
-  ├─ Periodic spawns throughout game
-  └─ Prevents clustering
+  ├─ Randomized: 4–8 seconds between notices
+  ├─ Pauses if the max visible count is reached
+  └─ Resumes automatically after the board clears
 
 Positioning:
-  ├─ Away from joystick zone constraints
-  └─ Respects viewport boundaries
+  ├─ Spawned inside the gameplay arena anchor
+  ├─ Avoids the on-screen joystick zone on mobile
+  └─ Clamped to viewport-safe bounds
 
 Decay:
   ├─ Auto-decay after: 5s (if untouched)
   ├─ Manual close available
-  └─ User input prioritized
+  └─ Dismissal triggers a score reward
 ```
 
 ### Scoring Impact

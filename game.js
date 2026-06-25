@@ -66,6 +66,8 @@ class GameEngine {
     this.peakMoney = 0; // highest money reached in this run
     this.survivalTime = 0;
     this.isMobile = false;
+    this.mobileQualityMode = false;
+    this.dpr = 1;
     this.chappalHits = 0;
     this.deadAlliesCount = 0;
     this.highScore = parseFloat(localStorage.getItem('rr_high_score') || '0'); // peak money ever
@@ -157,13 +159,26 @@ class GameEngine {
 
   resizeCanvas() {
     if (!this.canvas) return;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const width = Math.max(1, Math.floor(window.innerWidth));
+    const height = Math.max(1, Math.floor(window.innerHeight));
+    const dpr = Math.min(window.devicePixelRatio || 1, this.mobileQualityMode ? 1.5 : 2);
+
+    this.canvas.width = Math.floor(width * dpr);
+    this.canvas.height = Math.floor(height * dpr);
+    this.canvas.style.width = `${width}px`;
+    this.canvas.style.height = `${height}px`;
+    this.dpr = dpr;
+
+    if (this.ctx) {
+      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
   }
 
   updateControlMode() {
     // Control mode is explicitly selected from landing settings only.
+    const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
     this.isMobile = this.controlMode === 'joystick';
+    this.mobileQualityMode = this.isMobile || isTouchDevice || window.innerWidth < 900;
     const joyContainer = document.getElementById('joystick-container');
     if (joyContainer) {
       if (this.isMobile) joyContainer.classList.remove('hidden');
@@ -527,7 +542,10 @@ class GameEngine {
   }
 
   spawnParticles(x, y, color, count = 8) {
-    for (let i = 0; i < count; i++) {
+    const maxParticles = this.mobileQualityMode ? Math.min(count, 6) : count;
+    if (this.particles.length > 180) return;
+
+    for (let i = 0; i < maxParticles; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1 + Math.random() * 4;
       this.particles.push({
@@ -1156,13 +1174,15 @@ class GameEngine {
   draw() {
     if (!this.ctx) return;
 
-    // Optional zoom for mobile (screens < 768px wide) to see more area
-    const zoom = (typeof window !== 'undefined' && window.innerWidth < 768) ? 0.55 : 1.0;
-    const vWidth = this.canvas.width / zoom;
-    const vHeight = this.canvas.height / zoom;
+    const isMobileViewport = typeof window !== 'undefined' && window.innerWidth < 768;
+    const zoom = isMobileViewport ? 0.55 : 1.0;
+    const cssWidth = window.innerWidth;
+    const cssHeight = window.innerHeight;
+    const vWidth = cssWidth / zoom;
+    const vHeight = cssHeight / zoom;
 
-    // Clear Canvas
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.ctx.clearRect(0, 0, cssWidth, cssHeight);
 
     this.ctx.save();
     this.ctx.scale(zoom, zoom);
@@ -1415,25 +1435,28 @@ class GameEngine {
   }
 
   drawCollectibles() {
+    const useHeavyEffects = !this.mobileQualityMode;
+
     this.collectibles.forEach((c, index) => {
       const hoverOffset = Math.sin(Date.now() * 0.005 + c.bounce) * 3;
 
       this.ctx.save();
       this.ctx.translate(c.x, c.y + hoverOffset);
 
-      // Universal golden pulsing 360deg glow behind every power-up
-      const glowPulse = 0.6 + Math.sin(Date.now() * 0.006 + c.bounce) * 0.4;
-      const universalGlow = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
-      universalGlow.addColorStop(0, 'rgba(255, 215, 0, 0.7)');
-      universalGlow.addColorStop(0.5, 'rgba(255, 193, 7, 0.3)');
-      universalGlow.addColorStop(1, 'rgba(255, 215, 0, 0)');
-      
-      this.ctx.globalAlpha = glowPulse;
-      this.ctx.fillStyle = universalGlow;
-      this.ctx.beginPath();
-      this.ctx.arc(0, 0, 26, 0, Math.PI * 2);
-      this.ctx.fill();
-      this.ctx.globalAlpha = 1;
+      if (useHeavyEffects) {
+        const glowPulse = 0.6 + Math.sin(Date.now() * 0.006 + c.bounce) * 0.4;
+        const universalGlow = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 26);
+        universalGlow.addColorStop(0, 'rgba(255, 215, 0, 0.7)');
+        universalGlow.addColorStop(0.5, 'rgba(255, 193, 7, 0.3)');
+        universalGlow.addColorStop(1, 'rgba(255, 215, 0, 0)');
+
+        this.ctx.globalAlpha = glowPulse;
+        this.ctx.fillStyle = universalGlow;
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 26, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.globalAlpha = 1;
+      }
 
       if (c.type === 'crumb') {
         // Bread emoji
@@ -1564,6 +1587,8 @@ class GameEngine {
   }
 
   drawHazards() {
+    const useHeavyEffects = !this.mobileQualityMode;
+
     this.hazards.forEach(h => {
       if (h.type === 'chappal') {
         this.ctx.save();
@@ -1596,55 +1621,54 @@ class GameEngine {
       }
 
       else if (h.type === 'bygone') {
-        // Slow lingering gas cloud (multiple overlapping gradients)
-        const radGrd = this.ctx.createRadialGradient(h.x, h.y, 10, h.x, h.y, h.radius);
-        const intensity = h.life > 1.0 ? 0.38 : (h.life / 1.0) * 0.38; // fade out near death
-        radGrd.addColorStop(0, `rgba(34, 197, 94, ${intensity})`);
-        radGrd.addColorStop(0.5, `rgba(34, 197, 94, ${intensity * 0.5})`);
-        radGrd.addColorStop(1, 'rgba(34, 197, 94, 0)');
+        const intensity = h.life > 1.0 ? 0.38 : (h.life / 1.0) * 0.38;
 
-        this.ctx.fillStyle = radGrd;
-        this.ctx.beginPath();
-        this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
-        this.ctx.fill();
+        if (useHeavyEffects) {
+          const radGrd = this.ctx.createRadialGradient(h.x, h.y, 10, h.x, h.y, h.radius);
+          radGrd.addColorStop(0, `rgba(34, 197, 94, ${intensity})`);
+          radGrd.addColorStop(0.5, `rgba(34, 197, 94, ${intensity * 0.5})`);
+          radGrd.addColorStop(1, 'rgba(34, 197, 94, 0)');
 
-        // Little green bubble details inside gas
-        this.ctx.fillStyle = 'rgba(74, 222, 128, 0.25)';
-        const count = 4;
-        for (let j = 0; j < count; j++) {
-          const bAngle = (Date.now() * 0.001 + j * Math.PI / 2) % (Math.PI * 2);
-          const bx = h.x + Math.cos(bAngle) * (h.radius * 0.4);
-          const by = h.y + Math.sin(bAngle) * (h.radius * 0.4);
+          this.ctx.fillStyle = radGrd;
           this.ctx.beginPath();
-          this.ctx.arc(bx, by, 3 + (j % 3), 0, Math.PI * 2);
+          this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+          this.ctx.fill();
+        } else {
+          this.ctx.fillStyle = `rgba(34, 197, 94, ${intensity * 0.4})`;
+          this.ctx.beginPath();
+          this.ctx.arc(h.x, h.y, h.radius * 0.5, 0, Math.PI * 2);
           this.ctx.fill();
         }
       }
 
       else if (h.type === 'torch') {
-        // Highlight yellow circle spotlight sweeping
         this.ctx.save();
 
-        // Spotlight glow
-        const glow = this.ctx.createRadialGradient(h.x, h.y, h.radius * 0.2, h.x, h.y, h.radius);
-        const torchAlpha = 0.32 + Math.sin(Date.now() * 0.015) * 0.08;
-        glow.addColorStop(0, `rgba(253, 224, 71, ${torchAlpha})`);
-        glow.addColorStop(0.7, `rgba(253, 224, 71, ${torchAlpha * 0.3})`);
-        glow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+        if (useHeavyEffects) {
+          const glow = this.ctx.createRadialGradient(h.x, h.y, h.radius * 0.2, h.x, h.y, h.radius);
+          const torchAlpha = 0.32 + Math.sin(Date.now() * 0.015) * 0.08;
+          glow.addColorStop(0, `rgba(253, 224, 71, ${torchAlpha})`);
+          glow.addColorStop(0.7, `rgba(253, 224, 71, ${torchAlpha * 0.3})`);
+          glow.addColorStop(1, 'rgba(253, 224, 71, 0)');
 
-        this.ctx.fillStyle = glow;
-        this.ctx.beginPath();
-        this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
-        this.ctx.fill();
+          this.ctx.fillStyle = glow;
+          this.ctx.beginPath();
+          this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+          this.ctx.fill();
 
-        // Spotlight boundary dash rings
-        this.ctx.strokeStyle = 'rgba(253, 224, 71, 0.4)';
-        this.ctx.lineWidth = 1.5;
-        this.ctx.setLineDash([8, 6]);
-        this.ctx.beginPath();
-        this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
-        this.ctx.stroke();
-        this.ctx.setLineDash([]); // reset
+          this.ctx.strokeStyle = 'rgba(253, 224, 71, 0.4)';
+          this.ctx.lineWidth = 1.5;
+          this.ctx.setLineDash([8, 6]);
+          this.ctx.beginPath();
+          this.ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
+          this.ctx.stroke();
+          this.ctx.setLineDash([]);
+        } else {
+          this.ctx.fillStyle = 'rgba(253, 224, 71, 0.16)';
+          this.ctx.beginPath();
+          this.ctx.arc(h.x, h.y, h.radius * 0.55, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
 
         this.ctx.restore();
       }
